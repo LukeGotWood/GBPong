@@ -129,7 +129,7 @@ Start:
 	ld	[hl], OAMF_XFLIP            ; Set all flags to 0. X,Y-flip, palette, etc.
 
     xor a                           ; (ld a, 0)
-    ld [(_RAM + 160)], a            ; Load A into Paddle direction
+    ld [_RAM + 160], a            ; Load A into Paddle direction
 
     ; -------- END Paddle_Right --------
 
@@ -144,7 +144,7 @@ Start:
 	ld	[hl], 0                     ; Set all flags to 0. X,Y-flip, palette, etc.
 
     ld a, $02                       ; Set initial direction of ball                 #TODO: Random start direction
-    ld [(_RAM + 161)], a            ; Load A into ball direction
+    ld [_RAM + 161], a            ; Load A into ball direction
 
     ; Ball Direction Value
     ; $00 - East | North
@@ -217,15 +217,13 @@ loop:
 
     ; -------- Paddle_Right Movement --------
 
-    ld a, [(_RAM + 160)]    ; Load Paddle_Right's direction into A
-    and 1                   ; If 0, set flag
-    jr z, .MOVE_DOWN        ; If 0, move downwards
+    ld a, [_RAM + 4]        ; Load Paddle_left's Y into A
+    ld hl, (_RAM + 8)       ; Load Ball's Y address into HL
+    cp a, [hl]              ; (Paddle_left's Y - Ball's Y)
+    jr c, .MOVE_DOWN
 
     ; -------- MOVE_UP --------
     ld a, [_RAM + 4]        ; Load Paddle_Right's Y into A
-    cp a, 16                ; (Y - N)
-    jr z, .MOVE_FLIP        ; If Y is N, flip direction
-
     dec a                   ; Move Paddle_Right downwards
     ld [_RAM + 4], a        ; Write new Y to sprite sheet
 
@@ -234,19 +232,8 @@ loop:
 .MOVE_DOWN
     ; -------- MOVE_DOWN --------
     ld a, [_RAM + 4]        ; Load Paddle_Right's Y into A
-    cp a, (SCRN_Y + 8)      ; (Y - (SCRN_Y + N))
-    jr z, .MOVE_FLIP        ; If Y is (SCRN_Y + N), flip direction
-
     inc a                   ; Move Paddle_Right upwards
     ld [_RAM + 4], a        ; Write new Y to sprite sheet
-
-    jr .MOVE_END            ; Continue loop
-
-.MOVE_FLIP
-    ; -------- MOVE_FLIP --------
-    ld a,  [(_RAM + 160)]   ; Load Paddle_Right's direction into A
-    xor 1                   ; Toggle direction
-    ld [(_RAM + 160)], a    ; Load new direction into RAM
 
 .MOVE_END
     ; -------- END Paddle_Right Movement --------
