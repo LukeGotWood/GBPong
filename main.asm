@@ -4,6 +4,7 @@ INCLUDE "dma.asm"
 
 INCLUDE "Paddle.asm"
 INCLUDE "Ball.asm"
+INCLUDE "Score.asm"
 
 ; -------- INTERRUPT VECTORS --------
 ; specific memory addresses are called when a hardware interrupt triggers
@@ -71,41 +72,45 @@ Start:
 
 .waitVBlank
     ld a, [rLY]         ; Load LCDC Y-Coordinate into A
-    cp a, SCRN_Y           ; rLY - SCRN_Y
+    cp a, SCRN_Y        ; rLY - SCRN_Y
     jr c, .waitVBlank   ; if rLY < SCRN_Y then jump to .waitVBlank
 
 ; -------- END WaitVBlank --------
 
 ; -------- Initial Configuration --------
 
-    xor a                               ; (ld A, 0)
-    ld [rLCDC], a                       ; Load A into LCDC register
+    xor a           ; (ld A, 0)
+    ld [rLCDC], a   ; Load A into LCDC register
 
-    ClearScreen                         ; ClearScreen MACRO
+    ClearScreen     ; ClearScreen MACRO
 
-    CopyData _VRAM, PADDLE, PADDLEEND   ; CopyData MACRO
+    CopyData _VRAM, PADDLE, PADDLEEND                       ; CopyData MACRO
 
-    CopyData (_VRAM + (PADDLEEND - PADDLE)), BALL, BALLEND      ; CopyData MACRO
+    CopyData (_VRAM + (PADDLEEND - PADDLE)), BALL, BALLEND  ; CopyData MACRO
+
+    CopyData $9010, SCORE, SCOREEND                         ; CopyData MACRO
 
     ld a, %00011011     ; Load A with colour pallet settings
     ld [rBGP], a        ; Load BG colour pallet with A
 
-    ld a, %00011011
+    ld a, %00011011     ; Load A with colour pallet settings
     ld [rOBP0], a       ; Load OBJ0 colour pallet with A
 
     xor a               ; (ld a, 0)
-    ld [rSCY], a        ; Load scroll Y with A
-    ld [rSCX], a        ; Load scroll X with A
+    ld [rSCY], a        ; Load BG scroll Y with A
+    ld [rSCX], a        ; Load BG scroll X with A
 
-    xor a               ; (ld a, 0)
     ld [rNR52], a       ; Load sound enable with A
 
-    xor a               ; (ld a, 0)
     or LCDCF_ON         ; Set LCD enabled bit in A
     or LCDCF_BGON       ; Set BG enabled bit in A
     or LCDCF_OBJ8       ; Set OBJ height 8 bit in A
     or LCDCF_OBJON      ; Set OBJ on bit in A
     ld [rLCDC], a       ; Load LCDC with A (settings)
+
+    ld a, $01           ; (ld a, 0)
+    ld [$9824], a       ; Position left score on screen
+    ld [$9830], a       ; Position right score on screen
 
     ; -------- Paddle_Left --------
     ld	hl, _RAM	                ; HL points to sprite's Y
