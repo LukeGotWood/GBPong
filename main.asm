@@ -113,8 +113,8 @@ Start:
     ld [$9830], a       ; Position right score on screen
 
     ; -------- Paddle_Left --------
-    ld	hl, _RAM	                ; HL points to sprite's Y
-	ld	[hl], (SCRN_Y / 2) + 8	    ; Set Y to middle-screen
+    Spr_getY 0                      ; (ld hl, _RAM) HL points to sprite's Y
+	ld	[hl], ((SCRN_Y / 2) + 8)	; Set Y to middle-screen
 	inc	hl		                    ; HL points to sprite's X
 	ld	[hl], 8	                    ; Set X to left-screen
 	inc	hl		                    ; HL points to sprite's tile (from BG map)
@@ -124,7 +124,7 @@ Start:
     ; -------- END Paddle_Left --------
 
     ; -------- Paddle_Right --------
-    ld	hl, (_RAM + 4)	            ; HL points to sprite's Y
+    Spr_getY 1                      ; (ld hl, _RAM + 4) HL points to sprite's Y
 	ld	[hl], ((SCRN_Y / 2) + 8)	; Set Y to middle-screen
 	inc	hl		                    ; HL points to sprite's X
 	ld	[hl], SCRN_X                ; Set X to right-screen
@@ -134,12 +134,12 @@ Start:
 	ld	[hl], OAMF_XFLIP            ; Set all flags to 0. X,Y-flip, palette, etc.
 
     xor a                           ; (ld a, 0)
-    ld [_RAM + 160], a            ; Load A into Paddle direction
+    ld [_RAM + 160], a              ; Load A into Paddle direction
 
     ; -------- END Paddle_Right --------
 
     ; -------- Ball --------
-    ld	hl, (_RAM + 8)	            ; HL points to sprite's Y
+    Spr_getY 2                      ; (ld hl, _RAM + 8) HL points to sprite's Y
 	ld	[hl], ((SCRN_Y / 2) + 8)	; Set Y to middle-screen
 	inc	hl		                    ; HL points to sprite's X
 	ld	[hl], ((SCRN_X / 2))        ; Set X to right-screen
@@ -149,7 +149,7 @@ Start:
 	ld	[hl], 0                     ; Set all flags to 0. X,Y-flip, palette, etc.
 
     ld a, $02                       ; Set initial direction of ball                 #TODO: Random start direction
-    ld [_RAM + 161], a            ; Load A into ball direction
+    ld [_RAM + 161], a              ; Load A into ball direction
 
     ; Ball Direction Value
     ; $00 - East | North
@@ -196,12 +196,13 @@ loop:
     jr z, .JOY_DOWN     ; If z flag then skip JOY_UP
 
     ; -------- JOY_UP --------
-    ld a, [_RAM]    ; Get current Y
+    Spr_getY 0      ; Spr_getY MACRO
+    ld a, [hl]      ; Get current Y
     cp a, (16)      ; (Y - N)
     jr z, .JOY_DOWN ; If Y is N, ignore press
 
     dec a           ; Move Paddle_Left upwards
-    ld [_RAM], a    ; Write new Y to sprite sheet
+    ld [hl], a      ; Write new Y to sprite sheet
 
 .JOY_DOWN
     pop af          ; Load the joypad state
@@ -210,35 +211,39 @@ loop:
     jr z, .JOY_END  ; If z flag then skip to JOY_END
 
     ; -------- JOY_DOWN --------
-    ld a, [_RAM]        ; Get current Y 
+    Spr_getY 0          ; Spr_getY MACRO
+    ld a, [hl]          ; Get current Y 
     cp a, (SCRN_Y + 8)  ; (Y - (SCRN_Y + N))
     jr z, .JOY_END      ; If Y is (SCRN_Y + N), ignore press
 
     inc a               ; Move Paddle_Left downwards
-    ld [_RAM], a        ; Write new Y to sprite sheet
+    ld [hl], a          ; Write new Y to sprite sheet
 
 .JOY_END
     ; -------- END Paddle_Left Movement --------
 
     ; -------- Paddle_Right Movement --------
-
-    ld a, [_RAM + 4]        ; Load Paddle_left's Y into A
-    ld hl, (_RAM + 8)       ; Load Ball's Y address into HL
-    cp a, [hl]              ; (Paddle_left's Y - Ball's Y)
-    jr c, .MOVE_DOWN
+    Spr_getY 1          ; Spr_getY MACRO
+    ld a, [hl]          ; Load Paddle_right's Y into A
+    Spr_getY_P 2        ; Spr_getY MACRO
+    cp [hl]             ; (Paddle_right's Y - Ball's Y)
+    jr z, .MOVE_END     ; If Paddle_right and ball in same Y, continue loop
+    jr c, .MOVE_DOWN    ; If ball below Paddle_right, move down
 
     ; -------- MOVE_UP --------
-    ld a, [_RAM + 4]        ; Load Paddle_Right's Y into A
-    dec a                   ; Move Paddle_Right downwards
-    ld [_RAM + 4], a        ; Write new Y to sprite sheet
+    Spr_getY 1          ; Spr_getY MACRO
+    ld a, [hl]          ; Load Paddle_Right's Y into A
+    dec a               ; Move Paddle_Right downwards
+    ld [hl], a          ; Write new Y to sprite sheet
 
-    jr .MOVE_END            ; Continue loop
+    jr .MOVE_END        ; Continue loop
 
 .MOVE_DOWN
     ; -------- MOVE_DOWN --------
-    ld a, [_RAM + 4]        ; Load Paddle_Right's Y into A
-    inc a                   ; Move Paddle_Right upwards
-    ld [_RAM + 4], a        ; Write new Y to sprite sheet
+    Spr_getY 1          ; Spr_getY MACRO
+    ld a, [hl]          ; Load Paddle_Right's Y into A
+    inc a               ; Move Paddle_Right upwards
+    ld [hl], a          ; Write new Y to sprite sheet
 
 .MOVE_END
     ; -------- END Paddle_Right Movement --------
@@ -252,23 +257,25 @@ loop:
     jr nz, .BALL_SOUTH      ; If Z, Move ball north
 
     ; -------- BALL_NORTH --------
-    ld a, [_RAM + 8]        ; Load ball's Y into A
+    Spr_getY 2              ; Spr_getY MACRO
+    ld a, [hl]              ; Load ball's Y into A
     cp a, 16                ; (Y - N)
     jr z, .BALL_YFLIP       ; If Z, change Y direction
 
     dec a                   ; Move ball north
-    ld [_RAM + 8], a        ; Load new Y into sprite sheet
-    jr .BALL_EW            ; Continue to check X direction
+    ld [hl], a              ; Load new Y into sprite sheet
+    jr .BALL_EW             ; Continue to check X direction
 
 .BALL_SOUTH
     ; -------- BALL_SOUTH --------
-    ld a, [_RAM + 8]        ; Load ball's Y into A
+    Spr_getY 2              ; Spr_getY MACRO
+    ld a, [hl]        ; Load ball's Y into A
     cp a, (SCRN_Y + 8)      ; (Y - (SCRN_Y + N)))
     jr z, .BALL_YFLIP       ; If Z, change Y direction
 
     inc a                   ; Move ball north
-    ld [_RAM + 8], a        ; Load new Y into sprite sheet
-    jr .BALL_EW            ; Continue to check X direction
+    ld [hl], a        ; Load new Y into sprite sheet
+    jr .BALL_EW             ; Continue to check X direction
 
 .BALL_YFLIP
     ld a, [(_RAM + 161)]    ; Load ball's direction into A
@@ -283,28 +290,67 @@ loop:
     jr nz, .BALL_WEST       ; If Z, Move ball east
 
     ; -------- BALL_EAST --------
-    ld a, [_RAM + (8 + 1)]  ; Load ball's X into A
+    Spr_getX 2              ; Spr_getX MACRO
+    ld a, [hl]              ; Load ball's X into A
     cp a, SCRN_X            ; (X - N)
-    jr z, .BALL_XFLIP       ; If Z, change X direction
+    jr z, .BALL_XCHECK      ; If Z, change X direction
 
     inc a                   ; Move ball north
-    ld [_RAM + (8 + 1)], a  ; Load new X into sprite sheet
+    ld [hl], a              ; Load new X into sprite sheet
     jr .BALL_END            ; Continue loop
 
 .BALL_WEST
     ; -------- BALL_WEST --------
-    ld a, [_RAM + (8 + 1)]  ; Load ball's X into A
+    Spr_getX 2              ; Spr_getX MACRO
+    ld a, [hl]              ; Load ball's X into A
     cp a, 8                 ; (X - N)
-    jr z, .BALL_XFLIP       ; If Z, change X direction
+    jr z, .BALL_XCHECK      ; If Z, change X direction
 
     dec a                   ; Move ball west
-    ld [_RAM + 8 + 1], a    ; Load new X into sprite sheet
+    ld [hl], a              ; Load new X into sprite sheet
     jr .BALL_END            ; Continue to check X direction
 
-.BALL_XFLIP
+.BALL_XCHECK
     ld a, [(_RAM + 161)]    ; Load ball's direction into A
-    xor a, $02              ; Flip Y direction
-    ld [(_RAM + 161)], a    ; Load A into ball's direction
+    and $02                 ; Mask to get X direction
+    jr nz, .BALL_LPADDLE    ; If Z, ball is moving east
+
+    ; -------- BALL_RPADDLE --------
+    
+    ; -------- CHECK_TOP --------
+    Spr_getY 1          ; Spr_getY MACRO
+    ld a, [hl]          ; Load Paddle_Right's Y into A
+    ld b, a             ; Load A into B
+
+    Spr_getY 2          ; Spr_getY MACRO
+    ld a, [hl]          ; Load ball's Y into A
+
+    sub a, 10           ; Subtract offsets from ball's Y
+    cp a, b             ; (A - B)
+    jr c, .BALL_END     ; If C, ball is above top
+
+    ; -------- CHECK_BOTTOM --------
+    Spr_getY 1          ; Spr_getY MACRO
+    ld a, [hl]          ; Load Paddle_Right's Y into A
+    ld b, a             ; Load A into B
+
+    Spr_getY 2          ; Spr_getY MACRO
+    ld a, [hl]          ; Load ball's Y into A
+
+    sub a, 6            ; Subtract offsets from ball's Y
+    cp a, b             ; (A - B)
+    jr c, .BALL_XFLIP   ; If C, ball is above bottom
+    jr .BALL_END
+
+.BALL_XFLIP
+    xor $02                 ; Flip X direction
+    ld [(_RAM + 161)], a    ; Load A into ball's X direction
+    jr .BALL_END            ; Goto BALL_END
+
+.BALL_LPADDLE
+    ; -------- BALL_LPADDLE --------
+    xor $02                 ; Flip X direction
+    ld [(_RAM + 161)], a    ; Load A into ball's X direction
 
 .BALL_END
 
@@ -316,5 +362,4 @@ loop:
     jr .lockup      ; Should never be reached
 
 ; -------- END Main Loop --------
-
 ; -------- END Main --------
