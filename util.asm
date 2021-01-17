@@ -7,7 +7,7 @@ _BG_MAP EQU $9000
 OAMDATALOC = _RAM  
 
 ; Generic sprite function
-_Spr_get\@: MACRO
+_Spr_get: MACRO
 .getLoop\@
     and $FF             ; AND A with $FF
     jr z, .getEnd\@     ; If result 0, return value
@@ -19,7 +19,7 @@ _Spr_get\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite Y memory location
-Spr_getY\@: MACRO
+Spr_getY: MACRO
     ld hl, OAMDATALOC   ; Load HL with pointer to RAM sprite sheet
     ld a, \1            ; Load A with sprite parameter
 
@@ -27,7 +27,7 @@ Spr_getY\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite X memory location
-Spr_getX\@: MACRO
+Spr_getX: MACRO
     ld hl, (OAMDATALOC + 1) ; Load HL with pointer to (RAM sprite sheet + X offset)
     ld a, \1                ; Load A with sprite parameter
 
@@ -35,7 +35,7 @@ Spr_getX\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite Tile memory location
-Spr_getTile\@: MACRO
+Spr_getTile: MACRO
     ld hl, (OAMDATALOC + 2) ; Load HL with pointer to (RAM sprite sheet + Tile offset)
     ld a, \1                ; Load A with sprite parameter
 
@@ -43,7 +43,7 @@ Spr_getTile\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite Attribute memory location
-Spr_getAttr\@: MACRO
+Spr_getAttr: MACRO
     ld hl, (OAMDATALOC + 3) ; Load HL with pointer to (RAM sprite sheet + Attribute offset)
     ld a, \1                ; Load A with sprite parameter
 
@@ -51,7 +51,7 @@ Spr_getAttr\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite Y memory location & preserves registers
-Spr_getY_P\@: MACRO
+Spr_getY_P: MACRO
     push af             ; Preserve AF register
     push bc             ; Preserve BC register
 
@@ -65,7 +65,7 @@ Spr_getY_P\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite X memory location & preserves registers
-Spr_getX_P\@: MACRO
+Spr_getX_P: MACRO
     push af                 ; Preserve AF register
     push bc                 ; Preserve BC register
 
@@ -79,7 +79,7 @@ Spr_getX_P\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite Tile memory location & preserves registers
-Spr_getTile_P\@: MACRO
+Spr_getTile_P: MACRO
     push af                 ; Preserve AF register
     push bc                 ; Preserve BC register
 
@@ -93,7 +93,7 @@ Spr_getTile_P\@: MACRO
 ENDM
 
 ; Loads HL with specified sprite Attribute memory location & preserves registers
-Spr_getAttr_P\@: MACRO
+Spr_getAttr_P: MACRO
     push af                 ; Preserve AF register
     push bc                 ; Preserve BC register
 
@@ -107,7 +107,7 @@ Spr_getAttr_P\@: MACRO
 ENDM
 
 ; Writes 0s to RAM
-ClearRAM\@: MACRO
+ClearRAM: MACRO
 
     ld hl, _RAM             ; Load HL with pointer to RAM
     ld bc, _RAM_END - _RAM  ; Load BC with length of RAM
@@ -134,7 +134,7 @@ ClearRAM_P: MACRO
 ENDM
 
 ; Writes 0s to BG tile data & map
-ClearScreen\@: MACRO
+ClearScreen: MACRO
 
     ld hl, _SCRN0               ; Load HL with pointer to the BG tile data
     ld de, _BG_MAP              ; Load DE with pointer to the BG tile map
@@ -153,7 +153,7 @@ ClearScreen\@: MACRO
 ENDM
 
 ; Writes 0s to BG tile data & map & preserves registers
-ClearScreen_P\@: MACRO
+ClearScreen_P: MACRO
     push hl     ; Preserve HL register
     push de     ; Preserve DE register
     push bc     ; Preserve BC register
@@ -166,7 +166,7 @@ ClearScreen_P\@: MACRO
 ENDM
 
 ; Copys data from src address to dst address
-CopyData\@: MACRO
+CopyData: MACRO
 
     ld hl, \1               ; Load HL with pointer to dst address
     ld de, \2               ; Load DE with pointer to the start of src data
@@ -183,7 +183,7 @@ CopyData\@: MACRO
 ENDM
 
 ; Copys data from src address to dst address & preserves registers
-CopyData_P\@: MACRO
+CopyData_P: MACRO
     push hl     ; Preserve HL register
     push de     ; Preserve DE register
     push bc     ; Preserve BC register
